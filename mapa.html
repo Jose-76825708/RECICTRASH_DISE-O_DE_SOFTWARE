@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    html, body, #map {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .leaflet-tile { background: transparent; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script>
+     var markers = [];
+
+  // Función que recibe un array de pines desde Java
+  function addMarkersFromJava(pins) {
+    // Eliminar markers existentes
+    markers.forEach(function(m) { map.removeLayer(m); });
+    markers = [];
+
+    // Agregar los nuevos markers
+    pins.forEach(function(p) {
+      var marker = L.marker([p.lat, p.lng])
+                    .addTo(map)
+                    .bindPopup(p.info);
+      markers.push(marker); // Guardar para poder eliminar después
+    });
+  }
+
+  // Funciones de log seguras (puente JS <-> Java)
+  function safeLog(msg){ try{ if(window.app && window.app.log) window.app.log(msg); } catch(e){} }
+  function safeErr(msg){ try{ if(window.app && window.app.err) window.app.err(msg); } catch(e){} }
+
+  try {
+    // Inicializamos el mapa centrado en Huancayo
+    var map = L.map('map').setView([-12.064, -75.204], 14);
+
+    // Capas de OpenStreetMap con fallback transparente
+    var transparent = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      errorTileUrl: transparent
+    }).addTo(map).on('tileerror', function(e){ safeErr('Tile error'); });
+
+    safeLog('MAP-INIT OK');
+  } catch(e) {
+    safeErr('MAP INIT EX: ' + e);
+  }
+
+  // Captura de errores global
+  window.onerror = function(msg, src, line) {
+    safeErr('JS onerror: ' + msg + ' @' + src + ':' + line);
+  };
+  </script>
+</body>
+</html>
+
+
+
